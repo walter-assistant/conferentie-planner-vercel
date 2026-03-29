@@ -1554,11 +1554,25 @@ document.addEventListener('DOMContentLoaded', function() {
       window.clearAllData = clearAllData;
       window.renderVersionList = renderVersionList;
       
-      // Initialize the app
-      loadState().then(() => {
+      // Wait for auth session to be restored before loading
+      async function initApp() {
+        // Give Supabase time to restore the session
+        let retries = 0;
+        while (retries < 20) {
+          const { data: { session } } = await window.supabase.auth.getSession();
+          if (session) {
+            console.log('Auth session restored for:', session.user.email);
+            break;
+          }
+          retries++;
+          await new Promise(r => setTimeout(r, 250));
+        }
+        
+        await loadState();
         renderAll();
         updateProjectUI();
-      });
+      }
+      initApp();
     }
   }, 100);
 });
