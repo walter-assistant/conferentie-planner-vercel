@@ -1295,13 +1295,200 @@ function importJSON(event) {
 }
 
 function toggleCSVDrop() {
-  showToast('CSV import functionaliteit komt binnenkort');
-  // Implementation would go here
+  const zone = document.getElementById('csvDropZone');
+  if (zone) zone.style.display = zone.style.display === 'none' ? 'block' : 'none';
 }
 
+// Init CSV drop zone events
+document.addEventListener('DOMContentLoaded', function() {
+  const zone = document.getElementById('csvDropZone');
+  const fileInput = document.getElementById('importCSVFile');
+  if (!zone || !fileInput) return;
+  
+  zone.addEventListener('click', function() { fileInput.click(); });
+  zone.addEventListener('dragover', function(e) { e.preventDefault(); zone.style.background='#bbdefb'; zone.style.borderColor='#0d47a1'; });
+  zone.addEventListener('dragleave', function(e) { e.preventDefault(); zone.style.background='#e3f2fd'; zone.style.borderColor='#1e3a5f'; });
+  zone.addEventListener('drop', function(e) {
+    e.preventDefault();
+    zone.style.background='#e3f2fd'; zone.style.borderColor='#1e3a5f';
+    if (e.dataTransfer.files.length > 0) processCSVFile(e.dataTransfer.files[0]);
+  });
+  
+  fileInput.addEventListener('change', function() {
+    if (fileInput.files.length > 0) processCSVFile(fileInput.files[0]);
+    fileInput.value = '';
+  });
+});
+
 function importCSVFromInput(event) {
-  showToast('CSV import functionaliteit komt binnenkort');
-  // Implementation would go here
+  if (event.target.files.length > 0) processCSVFile(event.target.files[0]);
+  event.target.value = '';
+}
+
+function processCSVFile(file) {
+  const statusEl = document.getElementById('csvDropStatus');
+  if (statusEl) {
+    statusEl.style.display = 'block';
+    statusEl.style.color = '#1e3a5f';
+    statusEl.textContent = 'Laden: ' + file.name + '...';
+  }
+  const reader = new FileReader();
+  reader.onload = function(e) { importCSVData(e.target.result, file.name, statusEl); };
+  reader.readAsText(file);
+}
+
+function importCSVData(text, fileName, statusEl) {
+  try {
+    const lines = text.split(/\r?\n/).filter(l => l.trim().length > 0);
+    if (lines.length < 2) { showToast('CSV is leeg', 'error'); return; }
+
+    // Detect separator
+    let sep = ',';
+    if (lines[0].indexOf(';') > -1 && lines[0].indexOf(',') === -1) sep = ';';
+    if (lines[0].indexOf('\t') > -1 && lines[0].split('\t').length > lines[0].split(sep).length) sep = '\t';
+
+    // Parse headers
+    const headers = lines[0].split(sep).map(h => h.trim().replace(/^["']|["']$/g, '').toLowerCase());
+
+    // Find column indices
+    let colTitel = headers.findIndex(h => h.includes('titel') || h.includes('title') || h.includes('naam') || h.includes('sessie'));
+    let colSpreker = headers.findIndex(h => h.includes('spreker') || h.includes('speaker') || h.includes('presentator'));
+    let colType = headers.findIndex(h => h === 'type' || h.includes('soort'));
+    let colDuur = headers.findIndex(h => h.includes('duur') || h.includes('duration') || h.includes('min'));
+    let colDeelnemers = headers.findIndex(h => h.includes('deelnemer') || h.includes('attendees') || h.includes('aantal'));
+    let colDatum = headers.findIndex(h => h.includes('datum') || h.includes('date'));
+    let colZaal = headers.findIndex(h => h.includes('zaal') || h.includes('hall') || h.includes('room'));
+    let colStart = headers.findIndex(h => h.includes('start'));
+    let colNotities = headers.findIndex(h => h.includes('notit') || h.includes('notes') || h.includes('beschrijving'));
+    let colKleur = headers.findIndex(h => h.includes('kleur') || h.includes('color'));
+
+    if (colTitel < 0) colTitel = 0; // fallback
+
+    // Reverse TYPE_LABELS lookup
+    const typeLookup = {};
+    Object.entries(TYPE_LABELS).forEach(([k, v]) => { typeLookup[v.toLowerCase()] = k; });
+
+    pushUndo('CSV Import');
+
+    let imported = 0;
+    const hallsNeeded = new Set();
+
+    // First pass: collect halls
+    for (let i = 1; i < lines.length; i++) {
+      const vals = parseCSVLine(lines[i], sep);
+      const zaalNaam = colZaal >= 0 ? (vals[colZaal] || '').trim() : '';
+      if (zaalNaam) hallsNeeded.add(zaalNaam);
+    }
+
+    // Create missing halls
+    hallsNeeded.forEach(name => {
+      if (!state.halls.find(h => h.name.toLowerCase() === name.toLowerCase())) {
+        state.halls.push({ id: genId(), name: name, capacity: 0, location: '' });
+      }
+    });
+
+    // Second pass: import sessions
+    for (let i = 1; i < lines.length; i++) {
+      const vals = parseCSVLine(lines[i], sep);
+      const titel = (vals[colTitel] || '').trim();
+      if (!titel) continue;
+
+      const spreker = colSpreker >= 0 ? (vals[colSpreker] || '').trim() : '';
+      const typeRaw = colType >= 0 ? (vals[colType] || '').trim().toLowerCase() : '';
+      const type = typeLookup[typeRaw] || 'lezing';
+      const duurMin = colDuur >= 0 ? parseInt(vals[colDuur]) || 30 : 30;
+      const duration = Math.max(1, Math.round(duurMin / 15));
+      const deelnemers = colDeelnemers >= 0 ? parseInt(vals[colDeelnemers]) || 0 : 0;
+      const datum = colDatum >= 0 ? (vals[colDatum] || '').trim() : '';
+      const zaalNaam = colZaal >= 0 ? (vals[colZaal] || '').trim() : '';
+      const startTijd = colStart >= 0 ? (vals[colStart] || '').trim() : '';
+      const notities = colNotities >= 0 ? (vals[colNotities] || '').trim() : '';
+      const kleur = colKleur >= 0 ? (vals[colKleur] || '').trim() : '';
+
+      // Find hall
+      const hall = zaalNaam ? state.halls.find(h => h.name.toLowerCase() === zaalNaam.toLowerCase()) : null;
+
+      // Calculate slot from start time
+      let slotIndex = null;
+      if (startTijd) {
+        const timeParts = startTijd.match(/(\d{1,2})[:\.](\d{2})/);
+        if (timeParts) {
+          const totalMin = parseInt(timeParts[1]) * 60 + parseInt(timeParts[2]);
+          slotIndex = Math.round((totalMin - state.startHour * 60) / 15);
+          if (slotIndex < 0) slotIndex = null;
+        }
+      }
+
+      // Parse datum
+      let sessionDate = null;
+      if (datum) {
+        const dateMatch = datum.match(/(\d{4})-(\d{2})-(\d{2})/) || datum.match(/(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})/);
+        if (dateMatch) {
+          if (dateMatch[0].match(/^\d{4}/)) {
+            sessionDate = dateMatch[0];
+          } else {
+            sessionDate = `${dateMatch[3]}-${dateMatch[2].padStart(2,'0')}-${dateMatch[1].padStart(2,'0')}`;
+          }
+        }
+      }
+      if (!sessionDate && state.dates.length > 0) sessionDate = state.dates[0];
+
+      // Ensure date exists
+      if (sessionDate && !state.dates.includes(sessionDate)) {
+        state.dates.push(sessionDate);
+        state.dates.sort();
+      }
+
+      const typeColors = {lezing:'#1565c0',workshop:'#2e7d32',paneldiscussie:'#6a1b9a',pauze:'#ff8f00',lunch:'#e65100',netwerken:'#00838f',registratie:'#455a64',overig:'#c62828'};
+      const sessionColor = kleur || typeColors[type] || '#1565c0';
+
+      state.sessions.push({
+        id: genId(),
+        name: titel,
+        speaker: spreker,
+        type: type,
+        duration: duration,
+        attendees: deelnemers,
+        color: sessionColor,
+        notes: notities,
+        hallId: hall ? hall.id : null,
+        slotIndex: slotIndex,
+        date: sessionDate
+      });
+      imported++;
+    }
+
+    saveState();
+    state.activeDate = state.dates[0] || null;
+    renderAll();
+    if (statusEl) { statusEl.style.color = '#2e7d32'; statusEl.textContent = '✅ ' + imported + ' sessies geïmporteerd uit ' + fileName; }
+    showToast(imported + ' sessies geïmporteerd uit CSV');
+    setTimeout(function() { const z = document.getElementById('csvDropZone'); if (z) z.style.display = 'none'; }, 2000);
+  } catch(err) {
+    if (statusEl) { statusEl.style.color = '#c62828'; statusEl.textContent = '❌ Fout: ' + err.message; }
+    showToast('Fout bij CSV import: ' + err.message, 'error');
+  }
+}
+
+// Helper: parse CSV line respecting quoted fields
+function parseCSVLine(line, sep) {
+  const result = [];
+  let current = '';
+  let inQuotes = false;
+  for (let i = 0; i < line.length; i++) {
+    const ch = line[i];
+    if (inQuotes) {
+      if (ch === '"' && line[i + 1] === '"') { current += '"'; i++; }
+      else if (ch === '"') { inQuotes = false; }
+      else { current += ch; }
+    } else {
+      if (ch === '"') { inQuotes = true; }
+      else if (ch === sep) { result.push(current); current = ''; }
+      else { current += ch; }
+    }
+  }
+  result.push(current);
+  return result;
 }
 
 /* ═══════════════════════════════════════════════════════════════
