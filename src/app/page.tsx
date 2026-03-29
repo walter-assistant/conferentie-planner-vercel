@@ -156,7 +156,7 @@ function PlannerApp({ user }: { user: any }) {
 
     // Load external conferentie app script
     const script = document.createElement('script')
-    script.src = '/conferentie-app.js'
+    script.src = '/conferentie-app.js?v=' + Date.now()
     script.async = true
     document.body.appendChild(script)
 
