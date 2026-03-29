@@ -1299,17 +1299,28 @@ function toggleCSVDrop() {
   if (zone) zone.style.display = zone.style.display === 'none' ? 'block' : 'none';
 }
 
-// Init CSV drop zone events
-document.addEventListener('DOMContentLoaded', function() {
+// Init CSV drop zone events (with retry for React-rendered elements)
+function initCSVDropZone() {
   const zone = document.getElementById('csvDropZone');
   const fileInput = document.getElementById('importCSVFile');
-  if (!zone || !fileInput) return;
+  if (!zone || !fileInput) {
+    // Elements not yet rendered by React, retry
+    setTimeout(initCSVDropZone, 500);
+    return;
+  }
+  // Prevent double-init
+  if (zone.dataset.csvInit) return;
+  zone.dataset.csvInit = 'true';
   
-  zone.addEventListener('click', function() { fileInput.click(); });
-  zone.addEventListener('dragover', function(e) { e.preventDefault(); zone.style.background='#bbdefb'; zone.style.borderColor='#0d47a1'; });
-  zone.addEventListener('dragleave', function(e) { e.preventDefault(); zone.style.background='#e3f2fd'; zone.style.borderColor='#1e3a5f'; });
+  zone.addEventListener('click', function(e) {
+    // Only trigger file picker if not clicking on status text
+    if (e.target.id !== 'csvDropStatus') fileInput.click();
+  });
+  zone.addEventListener('dragover', function(e) { e.preventDefault(); e.stopPropagation(); zone.style.background='#bbdefb'; zone.style.borderColor='#0d47a1'; });
+  zone.addEventListener('dragleave', function(e) { e.preventDefault(); e.stopPropagation(); zone.style.background='#e3f2fd'; zone.style.borderColor='#1e3a5f'; });
   zone.addEventListener('drop', function(e) {
     e.preventDefault();
+    e.stopPropagation();
     zone.style.background='#e3f2fd'; zone.style.borderColor='#1e3a5f';
     if (e.dataTransfer.files.length > 0) processCSVFile(e.dataTransfer.files[0]);
   });
@@ -1318,7 +1329,13 @@ document.addEventListener('DOMContentLoaded', function() {
     if (fileInput.files.length > 0) processCSVFile(fileInput.files[0]);
     fileInput.value = '';
   });
-});
+  
+  console.log('CSV drop zone initialized');
+}
+document.addEventListener('DOMContentLoaded', initCSVDropZone);
+// Also try after a delay for React-rendered pages
+setTimeout(initCSVDropZone, 1000);
+setTimeout(initCSVDropZone, 3000);
 
 function importCSVFromInput(event) {
   if (event.target.files.length > 0) processCSVFile(event.target.files[0]);
