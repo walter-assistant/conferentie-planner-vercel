@@ -98,10 +98,12 @@ async function saveToSupabase() {
 async function loadState() {
   try {
     const conferenceService = getConferenceService();
-    if (!conferenceService) return;
+    if (!conferenceService) { console.error('No conferenceService available'); return; }
     
     // Get list of conferences
+    console.log('Loading conferences...');
     const conferences = await conferenceService.getConferences();
+    console.log('Found', conferences.length, 'conferences:', conferences.map(c => c.name));
     
     if (conferences.length === 0) {
       // Create first conference
