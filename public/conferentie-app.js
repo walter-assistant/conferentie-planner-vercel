@@ -53,6 +53,8 @@ function saveState() {
   try {
     if (currentConferenceId) {
       localStorage.setItem(`conf_cache_${currentConferenceId}`, JSON.stringify(state));
+      localStorage.setItem('conf_last_id', currentConferenceId);
+      localStorage.setItem('conf_last_name', state.confName || '');
     }
   } catch(e) {}
   
@@ -153,11 +155,21 @@ async function loadState() {
 
 function loadFromCache() {
   try {
+    // Restore conference ID from localStorage if not set
+    if (!currentConferenceId) {
+      const savedId = localStorage.getItem('conf_last_id');
+      if (savedId) {
+        currentConferenceId = savedId;
+        console.log('Restored conference ID from cache:', savedId);
+      }
+    }
     if (currentConferenceId) {
       const cached = localStorage.getItem(`conf_cache_${currentConferenceId}`);
       if (cached) {
         const data = JSON.parse(cached);
         state = { ...state, ...data };
+        console.log('Loaded state from localStorage cache');
+        showToast('Offline modus - data geladen uit cache');
       }
     }
   } catch(e) {
@@ -1558,14 +1570,24 @@ document.addEventListener('DOMContentLoaded', function() {
       async function initApp() {
         // Give Supabase time to restore the session
         let retries = 0;
+        let sessionRestored = false;
         while (retries < 20) {
-          const { data: { session } } = await window.supabase.auth.getSession();
-          if (session) {
-            console.log('Auth session restored for:', session.user.email);
-            break;
+          try {
+            const { data: { session } } = await window.supabase.auth.getSession();
+            if (session) {
+              console.log('Auth session restored for:', session.user.email);
+              sessionRestored = true;
+              break;
+            }
+          } catch(e) {
+            console.warn('Auth check failed:', e);
           }
           retries++;
           await new Promise(r => setTimeout(r, 250));
+        }
+        
+        if (!sessionRestored) {
+          console.warn('Auth session not restored after 5s, loading from cache');
         }
         
         await loadState();
