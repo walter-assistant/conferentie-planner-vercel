@@ -1622,10 +1622,25 @@ function parseCSVLine(line, sep) {
 // Initialize when DOM is ready
 // Use immediate invocation — DOMContentLoaded has already fired when React loads this script
 (function() {
+  console.log('🚀 Conferentie script starting...');
+  console.log('  window.supabase:', !!window.supabase);
+  console.log('  window.conferenceService:', !!window.conferenceService);
+  
   // Wait for Supabase to be available (loaded from layout)
-  const initInterval = setInterval(() => {
+  var waitCount = 0;
+  var initInterval = setInterval(function() {
+    waitCount++;
+    if (waitCount % 10 === 0) {
+      console.log('⏳ Waiting for Supabase... attempt', waitCount, 'supabase:', !!window.supabase, 'service:', !!window.conferenceService);
+    }
+    if (waitCount > 100) {
+      clearInterval(initInterval);
+      console.error('❌ Supabase services not available after 10s');
+      return;
+    }
     if (window.supabase && window.conferenceService) {
       clearInterval(initInterval);
+      console.log('✅ Supabase services found after', waitCount, 'attempts');
       
       // Expose functions to global scope for React component
       window.switchProject = switchProject;
