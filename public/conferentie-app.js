@@ -1646,26 +1646,25 @@ document.addEventListener('DOMContentLoaded', function() {
       
       // Wait for auth session to be restored before loading
       async function initApp() {
-        // Give Supabase time to restore the session
-        let retries = 0;
-        let sessionRestored = false;
-        while (retries < 20) {
-          try {
-            const { data: { session } } = await window.supabase.auth.getSession();
-            if (session) {
-              console.log('Auth session restored for:', session.user.email);
-              sessionRestored = true;
-              break;
+        // Script only loads when React confirms user is authenticated
+        // But verify we have a valid session before querying
+        try {
+          const { data: { session } } = await window.supabase.auth.getSession();
+          console.log('Auth check:', session ? 'Logged in as ' + session.user.email : 'NOT authenticated');
+          
+          if (!session) {
+            // Wait and retry — React loaded us but session may not be synced yet
+            console.log('Waiting for auth sync...');
+            await new Promise(r => setTimeout(r, 2000));
+            const { data: { session: s2 } } = await window.supabase.auth.getSession();
+            if (s2) {
+              console.log('Auth synced:', s2.user.email);
+            } else {
+              console.warn('Still no auth session, loading from cache');
             }
-          } catch(e) {
-            console.warn('Auth check failed:', e);
           }
-          retries++;
-          await new Promise(r => setTimeout(r, 250));
-        }
-        
-        if (!sessionRestored) {
-          console.warn('Auth session not restored after 5s, loading from cache');
+        } catch(e) {
+          console.warn('Auth check error:', e);
         }
         
         await loadState();
