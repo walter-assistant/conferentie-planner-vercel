@@ -1,7 +1,7 @@
-/* ═══════════════════════════════════════════════════════════════
+﻿/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
    CONFERENTIE PLANNER - SUPABASE VERSION
    Extracted from HTML version and adapted for Supabase cloud storage
-   ═══════════════════════════════════════════════════════════════ */
+   â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
 
 // Prevent double-loading (React strict mode / re-renders)
 if (window.__confPlannerLoaded) { console.warn('Conferentie script already loaded, skipping'); }
@@ -19,7 +19,7 @@ var TYPE_LABELS = {
 };
 var BREAK_TYPES = ['pauze', 'lunch'];
 
-let state = {
+var state = {
   halls: [],
   sessions: [],
   dates: [],
@@ -31,19 +31,19 @@ let state = {
   versions: []
 };
 
-let undoStack = [];
+var undoStack = [];
 var MAX_UNDO = 20;
-let currentConferenceId = null;
-let saveDebounceTimer = null;
+var currentConferenceId = null;
+var saveDebounceTimer = null;
 
 // Supabase integration - access from window
-const getSupabase = () => window.supabase;
-const getConferenceService = () => window.conferenceService;
-const getAuthService = () => window.authService;
+var getSupabase = () => window.supabase;
+var getConferenceService = () => window.conferenceService;
+var getAuthService = () => window.authService;
 
-/* ═══════════════════════════════════════════════════════════════
+/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
    ENHANCED PERSISTENCE WITH SUPABASE
-   ═══════════════════════════════════════════════════════════════ */
+   â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
 
 // Auto-save with debounce
 function saveState() {
@@ -109,11 +109,11 @@ async function loadState() {
     const sb = window.supabase;
     if (sb) {
       const { data: { session } } = await sb.auth.getSession();
-      console.log('🔑 Auth status:', session ? 'AUTHENTICATED as ' + session.user.email : 'NOT AUTHENTICATED');
+      console.log('ðŸ”‘ Auth status:', session ? 'AUTHENTICATED as ' + session.user.email : 'NOT AUTHENTICATED');
       
       // Debug: direct query to see what we get
       const { data: directData, error: directError } = await sb.from('conferences').select('id, name');
-      console.log('📊 Direct query result:', directData?.length, 'conferences', directError ? 'ERROR: ' + directError.message : '');
+      console.log('ðŸ“Š Direct query result:', directData?.length, 'conferences', directError ? 'ERROR: ' + directError.message : '');
     }
     
     // Get list of conferences
@@ -238,7 +238,7 @@ async function loadConference(conferenceId) {
 }
 
 // Auto version saving
-let lastAutoSave = 0;
+var lastAutoSave = 0;
 async function autoSaveVersion() {
   const now = Date.now();
   if (now - lastAutoSave < 10 * 60 * 1000) return; // Max 1 auto-save per 10 minutes
@@ -255,9 +255,9 @@ async function autoSaveVersion() {
   }
 }
 
-/* ═══════════════════════════════════════════════════════════════
+/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
    PROJECT MANAGEMENT (ENHANCED FOR SUPABASE)
-   ═══════════════════════════════════════════════════════════════ */
+   â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
 
 function renderProjectSelect(conferences) {
   const select = document.getElementById('projectSelect');
@@ -368,9 +368,9 @@ async function deleteProject() {
   }
 }
 
-/* ═══════════════════════════════════════════════════════════════
+/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
    VERSION MANAGEMENT (ENHANCED FOR SUPABASE)
-   ═══════════════════════════════════════════════════════════════ */
+   â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
 
 async function saveCurrentVersion() {
   const name = prompt('Naam voor deze versie:', `Versie ${state.versions.length + 1}`);
@@ -499,10 +499,10 @@ async function deleteVersion(versionId) {
   }
 }
 
-/* ═══════════════════════════════════════════════════════════════
+/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
    REST OF THE ORIGINAL FUNCTIONALITY
    (Copy remaining functions from original script)
-   ═══════════════════════════════════════════════════════════════ */
+   â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
 
 function genId() { return state.nextId++; }
 function slotCount() { return (state.endHour - state.startHour) * 4; }
@@ -539,7 +539,7 @@ function updateProjectUI() {
   
   let statusText = `${state.sessions.length} onderdelen`;
   if (unplaced > 0) statusText += ` (${unplaced} ongeplaatst)`;
-  statusText += ` · ${state.halls.length} zalen · ${dateInfo}`;
+  statusText += ` Â· ${state.halls.length} zalen Â· ${dateInfo}`;
   
   const statusEl = document.getElementById('projectStatus');
   if (statusEl) statusEl.textContent = statusText;
@@ -556,9 +556,9 @@ function editConferenceName() {
   showToast('Conferentienaam bijgewerkt');
 }
 
-/* ═══════════════════════════════════════════════════════════════
+/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
    MODALS
-   ═══════════════════════════════════════════════════════════════ */
+   â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
 function openModal(id) { document.getElementById(id).classList.add('active'); }
 function closeModal(id) { document.getElementById(id).classList.remove('active'); }
 
@@ -670,10 +670,10 @@ function renderHallList() {
     <div style="display:flex;align-items:center;gap:8px;padding:8px;margin-bottom:6px;background:#f5f5f5;border-radius:4px;">
       <div style="flex:1;">
         <strong>${h.name}</strong>
-        <span style="font-size:0.8rem;color:var(--text-light);margin-left:8px;">${h.capacity ? h.capacity + ' pers.' : ''} ${h.location ? '· ' + h.location : ''}</span>
+        <span style="font-size:0.8rem;color:var(--text-light);margin-left:8px;">${h.capacity ? h.capacity + ' pers.' : ''} ${h.location ? 'Â· ' + h.location : ''}</span>
       </div>
-      <button class="btn btn-sm btn-outline" style="color:var(--text);border-color:var(--border);" onclick="editHall(${h.id})">✏️</button>
-      <button class="btn btn-sm btn-danger" onclick="removeHall(${h.id})">🗑</button>
+      <button class="btn btn-sm btn-outline" style="color:var(--text);border-color:var(--border);" onclick="editHall(${h.id})">âœï¸</button>
+      <button class="btn btn-sm btn-danger" onclick="removeHall(${h.id})">ðŸ—‘</button>
     </div>
   `).join('');
 }
@@ -761,9 +761,9 @@ function saveSettings() {
   renderAll();
 }
 
-/* ═══════════════════════════════════════════════════════════════
+/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
    DATE TABS
-   ═══════════════════════════════════════════════════════════════ */
+   â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
 function addDate() {
   const last = state.dates[state.dates.length - 1];
   const next = new Date(last + 'T00:00:00');
@@ -779,7 +779,7 @@ function addDate() {
 }
 
 function removeDate(date) {
-  if (state.dates.length <= 1) { alert('Er moet minimaal één dag zijn.'); return; }
+  if (state.dates.length <= 1) { alert('Er moet minimaal Ã©Ã©n dag zijn.'); return; }
   if (!confirm(`Dag ${formatDate(date)} verwijderen? Programma-onderdelen op deze dag worden ongeplaatst.`)) return;
   pushUndo('Dag verwijderen: ' + formatDate(date));
   state.sessions.filter(s => s.date === date).forEach(s => {
@@ -798,14 +798,14 @@ function renderDateTabs() {
   container.innerHTML = state.dates.map(d => `
     <div class="date-tab ${d === state.activeDate ? 'active' : ''}" onclick="state.activeDate='${d}';saveState();renderAll();">
       ${formatDate(d)}
-      ${state.dates.length > 1 ? `<span class="remove-date" onclick="event.stopPropagation();removeDate('${d}')">×</span>` : ''}
+      ${state.dates.length > 1 ? `<span class="remove-date" onclick="event.stopPropagation();removeDate('${d}')">Ã—</span>` : ''}
     </div>
   `).join('');
 }
 
-/* ═══════════════════════════════════════════════════════════════
+/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
    RENDERING
-   ═══════════════════════════════════════════════════════════════ */
+   â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
 function renderAll() {
   renderDateTabs();
   renderHallListSidebar();
@@ -835,7 +835,7 @@ function hasCollision(hallId, slotIndex, duration, excludeId, date) {
   return false;
 }
 
-let draggedHallId = null;
+var draggedHallId = null;
 
 function renderHallListSidebar() {
   const container = document.getElementById('hallListSidebar');
@@ -846,7 +846,7 @@ function renderHallListSidebar() {
   countEl.textContent = state.halls.length;
   
   if (!state.halls.length) {
-    container.innerHTML = '<p style="color:var(--text-light);font-size:0.8rem;">Geen zalen. Klik op 🏛 Zalen om toe te voegen.</p>';
+    container.innerHTML = '<p style="color:var(--text-light);font-size:0.8rem;">Geen zalen. Klik op ðŸ› Zalen om toe te voegen.</p>';
     return;
   }
   
@@ -855,10 +855,10 @@ function renderHallListSidebar() {
     html += `<div class="hall-drop-indicator" data-index="${index}"></div>`;
     html += `
       <div class="hall-list-item" draggable="true" data-hall-id="${hall.id}">
-        <div class="drag-handle">≡</div>
+        <div class="drag-handle">â‰¡</div>
         <div class="hall-info">
           <div class="hall-name">${hall.name}</div>
-          <div class="hall-details">${hall.capacity ? hall.capacity + ' pers.' : 'Capaciteit onbekend'}${hall.location ? ' · ' + hall.location : ''}</div>
+          <div class="hall-details">${hall.capacity ? hall.capacity + ' pers.' : 'Capaciteit onbekend'}${hall.location ? ' Â· ' + hall.location : ''}</div>
         </div>
       </div>
     `;
@@ -940,7 +940,7 @@ function renderGrid() {
   let headerHtml = '';
   headerHtml += `<div class="grid-header time-header">Tijd</div>`;
   state.halls.forEach((h, idx) => {
-    headerHtml += `<div class="grid-header" draggable="true" data-hall-idx="${idx}" style="cursor:grab;" title="Sleep om volgorde te wijzigen">${h.name}${h.capacity ? `<div class="hall-capacity">${h.capacity} pers.${h.location ? ' · ' + h.location : ''}</div>` : ''}</div>`;
+    headerHtml += `<div class="grid-header" draggable="true" data-hall-idx="${idx}" style="cursor:grab;" title="Sleep om volgorde te wijzigen">${h.name}${h.capacity ? `<div class="hall-capacity">${h.capacity} pers.${h.location ? ' Â· ' + h.location : ''}</div>` : ''}</div>`;
   });
   headerRow.innerHTML = headerHtml;
 
@@ -1021,9 +1021,9 @@ function renderGrid() {
     block.innerHTML = `
       <div class="sb-title">${s.name}</div>
       ${timeStr ? `<div class="sb-time">${timeStr}</div>` : ''}
-      ${s.speaker ? `<div class="sb-speaker">👤 ${s.speaker}</div>` : ''}
-      ${s.attendees ? `<div class="sb-attendees">👥 ${s.attendees}</div>` : ''}
-      ${overCap ? '<div class="capacity-warning" title="Meer deelnemers dan zaalcapaciteit!">⚠️</div>' : ''}
+      ${s.speaker ? `<div class="sb-speaker">ðŸ‘¤ ${s.speaker}</div>` : ''}
+      ${s.attendees ? `<div class="sb-attendees">ðŸ‘¥ ${s.attendees}</div>` : ''}
+      ${overCap ? '<div class="capacity-warning" title="Meer deelnemers dan zaalcapaciteit!">âš ï¸</div>' : ''}
     `;
 
     block.addEventListener('dragstart', e => onBlockDragStart(e, s));
@@ -1053,7 +1053,7 @@ function renderUnplaced() {
       data-session-id="${s.id}"
       onclick="openSessionModal(state.sessions.find(x=>x.id===${s.id}))">
       <div class="item-title">${s.name}</div>
-      <div class="item-meta">${TYPE_LABELS[s.type]} · ${s.duration * 15} min${s.speaker ? ' · ' + s.speaker : ''}</div>
+      <div class="item-meta">${TYPE_LABELS[s.type]} Â· ${s.duration * 15} min${s.speaker ? ' Â· ' + s.speaker : ''}</div>
     </div>
   `).join('');
 
@@ -1119,7 +1119,7 @@ function renderStats() {
 
   if (warnings.length) {
     html += `<div style="margin-top:10px;padding:8px;background:#fff3e0;border-radius:4px;font-size:0.78rem;">
-      <strong>⚠️ Capaciteitswaarschuwingen:</strong><br>${warnings.join('<br>')}
+      <strong>âš ï¸ Capaciteitswaarschuwingen:</strong><br>${warnings.join('<br>')}
     </div>`;
   }
 
@@ -1127,11 +1127,11 @@ function renderStats() {
 
   // Stats bar in toolbar
   statsBar.innerHTML = `
-    <div class="stat-item">📋 <span class="stat-value">${total}</span> onderdelen</div>
-    <div class="stat-item">✅ <span class="stat-value">${placed}</span> geplaatst</div>
-    ${unplaced > 0 ? `<div class="stat-item">📌 <span class="stat-warn">${unplaced}</span> ongeplaatst</div>` : ''}
-    <div class="stat-item">📊 <span class="stat-value">${totalPct}%</span> bezet</div>
-    ${warnings.length ? `<div class="stat-item"><span class="stat-warn">⚠️ ${warnings.length}</span></div>` : ''}
+    <div class="stat-item">ðŸ“‹ <span class="stat-value">${total}</span> onderdelen</div>
+    <div class="stat-item">âœ… <span class="stat-value">${placed}</span> geplaatst</div>
+    ${unplaced > 0 ? `<div class="stat-item">ðŸ“Œ <span class="stat-warn">${unplaced}</span> ongeplaatst</div>` : ''}
+    <div class="stat-item">ðŸ“Š <span class="stat-value">${totalPct}%</span> bezet</div>
+    ${warnings.length ? `<div class="stat-item"><span class="stat-warn">âš ï¸ ${warnings.length}</span></div>` : ''}
   `;
 }
 
@@ -1169,7 +1169,7 @@ function renderVersions() {
            onclick="loadVersion('${v.id}')"
            title="Klik om te laden">
         <div style="font-weight:600;margin-bottom:1px;">${v.name}</div>
-        <div style="color:var(--text-light);font-size:0.72rem;">${formattedDate} · ${sessionCount} onderdelen</div>
+        <div style="color:var(--text-light);font-size:0.72rem;">${formattedDate} Â· ${sessionCount} onderdelen</div>
       </div>
     `;
   }).join('');
@@ -1214,8 +1214,8 @@ function renderVersionList() {
           <div style="font-size:0.75rem;color:var(--text-light);">${summary}</div>
         </div>
         <div style="display:flex;gap:4px;">
-          <button class="btn btn-sm btn-primary" onclick="loadVersion('${v.id}')" title="Laden">📂</button>
-          <button class="btn btn-sm btn-danger" onclick="deleteVersion('${v.id}')" title="Verwijderen">🗑</button>
+          <button class="btn btn-sm btn-primary" onclick="loadVersion('${v.id}')" title="Laden">ðŸ“‚</button>
+          <button class="btn btn-sm btn-danger" onclick="deleteVersion('${v.id}')" title="Verwijderen">ðŸ—‘</button>
         </div>
       </div>
     `;
@@ -1231,10 +1231,10 @@ function openVersionModal() {
   }, 100);
 }
 
-/* ═══════════════════════════════════════════════════════════════
+/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
    DRAG & DROP
-   ═══════════════════════════════════════════════════════════════ */
-let dragSession = null;
+   â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
+var dragSession = null;
 
 function onBlockDragStart(e, session) {
   dragSession = session;
@@ -1309,9 +1309,9 @@ function onCellDblClick(slotIndex, hallId) {
   openSessionModal(null, slotIndex, hallId);
 }
 
-/* ═══════════════════════════════════════════════════════════════
+/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
    UTILITY & EXPORT FUNCTIONS
-   ═══════════════════════════════════════════════════════════════ */
+   â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
 
 function showToast(message, canUndo = false) {
   const container = document.getElementById('toastContainer');
@@ -1341,7 +1341,7 @@ function toggleSection(id) {
 function exportJSON() {
   const blob = new Blob([JSON.stringify(state, null, 2)], { type: 'application/json' });
   downloadBlob(blob, `conferentie-${state.confName.replace(/\s/g, '_')}.json`);
-  showToast('JSON geëxporteerd');
+  showToast('JSON geÃ«xporteerd');
 }
 
 function exportCSV() {
@@ -1364,7 +1364,7 @@ function exportCSV() {
   const csv = [headers.join(','), ...rows].join('\n');
   const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
   downloadBlob(blob, `conferentie-${state.confName.replace(/\s/g, '_')}.csv`);
-  showToast('CSV geëxporteerd');
+  showToast('CSV geÃ«xporteerd');
 }
 
 function downloadBlob(blob, filename) {
@@ -1584,11 +1584,11 @@ function importCSVData(text, fileName, statusEl) {
     saveState();
     state.activeDate = state.dates[0] || null;
     renderAll();
-    if (statusEl) { statusEl.style.color = '#2e7d32'; statusEl.textContent = '✅ ' + imported + ' sessies geïmporteerd uit ' + fileName; }
-    showToast(imported + ' sessies geïmporteerd uit CSV');
+    if (statusEl) { statusEl.style.color = '#2e7d32'; statusEl.textContent = 'âœ… ' + imported + ' sessies geÃ¯mporteerd uit ' + fileName; }
+    showToast(imported + ' sessies geÃ¯mporteerd uit CSV');
     setTimeout(function() { const z = document.getElementById('csvDropZone'); if (z) z.style.display = 'none'; }, 2000);
   } catch(err) {
-    if (statusEl) { statusEl.style.color = '#c62828'; statusEl.textContent = '❌ Fout: ' + err.message; }
+    if (statusEl) { statusEl.style.color = '#c62828'; statusEl.textContent = 'âŒ Fout: ' + err.message; }
     showToast('Fout bij CSV import: ' + err.message, 'error');
   }
 }
@@ -1614,9 +1614,9 @@ function parseCSVLine(line, sep) {
   return result;
 }
 
-/* ═══════════════════════════════════════════════════════════════
+/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
    INITIALIZATION
-   ═══════════════════════════════════════════════════════════════ */
+   â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
 
 // Initialize when DOM is ready
 document.addEventListener('DOMContentLoaded', function() {
@@ -1667,7 +1667,7 @@ document.addEventListener('DOMContentLoaded', function() {
           console.log('Auth check:', session ? 'Logged in as ' + session.user.email : 'NOT authenticated');
           
           if (!session) {
-            // Wait and retry — React loaded us but session may not be synced yet
+            // Wait and retry â€” React loaded us but session may not be synced yet
             console.log('Waiting for auth sync...');
             await new Promise(r => setTimeout(r, 2000));
             const { data: { session: s2 } } = await window.supabase.auth.getSession();
