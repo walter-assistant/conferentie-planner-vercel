@@ -821,6 +821,8 @@ function hasCollision(hallId, slotIndex, duration, excludeId, date) {
   return false;
 }
 
+let draggedHallId = null;
+
 function renderHallListSidebar() {
   const container = document.getElementById('hallListSidebar');
   const countEl = document.getElementById('hallCount');
@@ -836,8 +838,9 @@ function renderHallListSidebar() {
   
   let html = '';
   state.halls.forEach((hall, index) => {
+    html += `<div class="hall-drop-indicator" data-index="${index}"></div>`;
     html += `
-      <div class="hall-list-item">
+      <div class="hall-list-item" draggable="true" data-hall-id="${hall.id}">
         <div class="drag-handle">≡</div>
         <div class="hall-info">
           <div class="hall-name">${hall.name}</div>
@@ -846,8 +849,53 @@ function renderHallListSidebar() {
       </div>
     `;
   });
+  html += `<div class="hall-drop-indicator" data-index="${state.halls.length}"></div>`;
   
   container.innerHTML = html;
+  
+  // Add drag event listeners for hall reordering
+  container.querySelectorAll('.hall-list-item').forEach(item => {
+    item.addEventListener('dragstart', function(e) {
+      draggedHallId = parseInt(e.target.closest('[data-hall-id]').dataset.hallId);
+      e.target.closest('[data-hall-id]').classList.add('dragging');
+      e.dataTransfer.effectAllowed = 'move';
+      e.dataTransfer.setData('text/plain', draggedHallId);
+    });
+    item.addEventListener('dragend', function(e) {
+      e.target.closest('[data-hall-id]')?.classList.remove('dragging');
+      document.querySelectorAll('.hall-drop-indicator').forEach(el => el.classList.remove('active'));
+      draggedHallId = null;
+    });
+  });
+  
+  container.querySelectorAll('.hall-drop-indicator').forEach(indicator => {
+    indicator.addEventListener('dragover', function(e) {
+      if (draggedHallId === null) return;
+      e.preventDefault();
+      e.dataTransfer.dropEffect = 'move';
+      document.querySelectorAll('.hall-drop-indicator').forEach(el => el.classList.remove('active'));
+      e.target.classList.add('active');
+    });
+    indicator.addEventListener('drop', function(e) {
+      e.preventDefault();
+      if (draggedHallId === null) return;
+      
+      const dropIndex = parseInt(e.target.dataset.index);
+      const draggedHall = state.halls.find(h => h.id === draggedHallId);
+      const currentIndex = state.halls.findIndex(h => h.id === draggedHallId);
+      
+      if (currentIndex === dropIndex || currentIndex === dropIndex - 1) return;
+      
+      pushUndo('Zaal volgorde wijzigen: ' + draggedHall.name);
+      state.halls.splice(currentIndex, 1);
+      const insertIndex = dropIndex > currentIndex ? dropIndex - 1 : dropIndex;
+      state.halls.splice(insertIndex, 0, draggedHall);
+      
+      saveState();
+      renderAll();
+      showToast(`Zaal "${draggedHall.name}" verplaatst`);
+    });
+  });
 }
 
 function renderGrid() {
@@ -878,9 +926,39 @@ function renderGrid() {
   let headerHtml = '';
   headerHtml += `<div class="grid-header time-header">Tijd</div>`;
   state.halls.forEach((h, idx) => {
-    headerHtml += `<div class="grid-header">${h.name}${h.capacity ? `<div class="hall-capacity">${h.capacity} pers.${h.location ? ' · ' + h.location : ''}</div>` : ''}</div>`;
+    headerHtml += `<div class="grid-header" draggable="true" data-hall-idx="${idx}" style="cursor:grab;" title="Sleep om volgorde te wijzigen">${h.name}${h.capacity ? `<div class="hall-capacity">${h.capacity} pers.${h.location ? ' · ' + h.location : ''}</div>` : ''}</div>`;
   });
   headerRow.innerHTML = headerHtml;
+
+  // Drag & drop on grid headers to reorder halls
+  let dragHallIdx = null;
+  headerRow.querySelectorAll('.grid-header[draggable]').forEach(el => {
+    el.addEventListener('dragstart', e => {
+      dragHallIdx = parseInt(el.dataset.hallIdx);
+      el.style.opacity = '0.4';
+      e.dataTransfer.effectAllowed = 'move';
+    });
+    el.addEventListener('dragend', e => { el.style.opacity = '1'; dragHallIdx = null; });
+    el.addEventListener('dragover', e => {
+      e.preventDefault();
+      e.dataTransfer.dropEffect = 'move';
+      el.style.background = '#bbdefb';
+    });
+    el.addEventListener('dragleave', e => { el.style.background = ''; });
+    el.addEventListener('drop', e => {
+      e.preventDefault();
+      el.style.background = '';
+      const dropIdx = parseInt(el.dataset.hallIdx);
+      if (dragHallIdx !== null && dragHallIdx !== dropIdx) {
+        pushUndo('Zalen herschikt');
+        const moved = state.halls.splice(dragHallIdx, 1)[0];
+        state.halls.splice(dropIdx, 0, moved);
+        saveState();
+        renderAll();
+        showToast('Zalen herschikt');
+      }
+    });
+  });
 
   let html = '';
 
