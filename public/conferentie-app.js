@@ -105,8 +105,19 @@ async function loadState() {
     const conferenceService = getConferenceService();
     if (!conferenceService) { console.error('No conferenceService available'); return; }
     
+    // Debug: check auth status directly
+    const sb = window.supabase;
+    if (sb) {
+      const { data: { session } } = await sb.auth.getSession();
+      console.log('🔑 Auth status:', session ? 'AUTHENTICATED as ' + session.user.email : 'NOT AUTHENTICATED');
+      
+      // Debug: direct query to see what we get
+      const { data: directData, error: directError } = await sb.from('conferences').select('id, name');
+      console.log('📊 Direct query result:', directData?.length, 'conferences', directError ? 'ERROR: ' + directError.message : '');
+    }
+    
     // Get list of conferences
-    console.log('Loading conferences...');
+    console.log('Loading conferences via service...');
     const conferences = await conferenceService.getConferences();
     console.log('Found', conferences.length, 'conferences:', conferences.map(c => c.name));
     
