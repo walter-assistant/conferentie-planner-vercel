@@ -1438,7 +1438,8 @@ function initCSVDropZone() {
   
   console.log('CSV drop zone initialized');
 }
-document.addEventListener('DOMContentLoaded', initCSVDropZone);
+// DOMContentLoaded already fired, call directly
+initCSVDropZone();
 // Also try after a delay for React-rendered pages
 setTimeout(initCSVDropZone, 1000);
 setTimeout(initCSVDropZone, 3000);
@@ -1619,7 +1620,8 @@ function parseCSVLine(line, sep) {
    â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
 
 // Initialize when DOM is ready
-document.addEventListener('DOMContentLoaded', function() {
+// Use immediate invocation — DOMContentLoaded has already fired when React loads this script
+(function() {
   // Wait for Supabase to be available (loaded from layout)
   const initInterval = setInterval(() => {
     if (window.supabase && window.conferenceService) {
