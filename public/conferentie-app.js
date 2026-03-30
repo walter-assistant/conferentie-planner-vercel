@@ -754,17 +754,40 @@ function saveSettings() {
    DATE TABS
    ═══════════════════════════════════════════════════════════════ */
 function addDate() {
-  const last = state.dates[state.dates.length - 1];
-  const next = new Date(last + 'T00:00:00');
+  var input = document.createElement('input');
+  input.type = 'date';
+  // Default to next day after last date
+  var last = state.dates[state.dates.length - 1];
+  var next = new Date(last + 'T00:00:00');
   next.setDate(next.getDate() + 1);
-  const iso = next.toISOString().split('T')[0];
-  if (!state.dates.includes(iso)) {
+  input.value = next.toISOString().split('T')[0];
+  input.style.cssText = 'position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);z-index:10000;padding:12px;font-size:16px;border:2px solid #1e3a5f;border-radius:8px;box-shadow:0 4px 20px rgba(0,0,0,.3);';
+  
+  var overlay = document.createElement('div');
+  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.3);z-index:9999;';
+  
+  function cleanup() { overlay.remove(); input.remove(); }
+  overlay.onclick = cleanup;
+  
+  input.onchange = function() {
+    var iso = input.value;
+    if (!iso) { cleanup(); return; }
+    if (state.dates.includes(iso)) { alert('Deze datum bestaat al.'); cleanup(); return; }
     state.dates.push(iso);
     state.dates.sort();
-  }
-  state.activeDate = iso;
-  saveState();
-  renderAll();
+    state.activeDate = iso;
+    saveState();
+    renderAll();
+    cleanup();
+    showToast('📅 Dag toegevoegd: ' + formatDate(iso));
+  };
+  
+  input.onkeydown = function(e) { if (e.key === 'Escape') cleanup(); };
+  
+  document.body.appendChild(overlay);
+  document.body.appendChild(input);
+  input.focus();
+  input.showPicker && input.showPicker();
 }
 
 function removeDate(date) {
@@ -785,11 +808,49 @@ function renderDateTabs() {
   if (!container) return;
   
   container.innerHTML = state.dates.map(d => `
-    <div class="date-tab ${d === state.activeDate ? 'active' : ''}" onclick="state.activeDate='${d}';saveState();renderAll();">
+    <div class="date-tab ${d === state.activeDate ? 'active' : ''}" onclick="state.activeDate='${d}';saveState();renderAll();" ondblclick="editDate('${d}')" title="Dubbelklik om datum te wijzigen">
       ${formatDate(d)}
       ${state.dates.length > 1 ? `<span class="remove-date" onclick="event.stopPropagation();removeDate('${d}')">×</span>` : ''}
     </div>
   `).join('');
+}
+
+function editDate(oldDate) {
+  // Create a temporary date input
+  var input = document.createElement('input');
+  input.type = 'date';
+  input.value = oldDate;
+  input.style.cssText = 'position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);z-index:10000;padding:12px;font-size:16px;border:2px solid #1e3a5f;border-radius:8px;box-shadow:0 4px 20px rgba(0,0,0,.3);';
+  
+  var overlay = document.createElement('div');
+  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.3);z-index:9999;';
+  
+  function cleanup() { overlay.remove(); input.remove(); }
+  overlay.onclick = cleanup;
+  
+  input.onchange = function() {
+    var newDate = input.value;
+    if (!newDate || newDate === oldDate) { cleanup(); return; }
+    if (state.dates.includes(newDate)) { alert('Deze datum bestaat al.'); cleanup(); return; }
+    pushUndo('Datum wijzigen: ' + formatDate(oldDate));
+    // Update all sessions on this date
+    state.sessions.forEach(function(s) { if (s.date === oldDate) s.date = newDate; });
+    var idx = state.dates.indexOf(oldDate);
+    state.dates[idx] = newDate;
+    state.dates.sort();
+    if (state.activeDate === oldDate) state.activeDate = newDate;
+    saveState();
+    renderAll();
+    cleanup();
+    showToast('📅 Datum gewijzigd naar ' + formatDate(newDate));
+  };
+  
+  input.onkeydown = function(e) { if (e.key === 'Escape') cleanup(); };
+  
+  document.body.appendChild(overlay);
+  document.body.appendChild(input);
+  input.focus();
+  input.showPicker && input.showPicker();
 }
 
 /* ═══════════════════════════════════════════════════════════════
@@ -1642,6 +1703,7 @@ function parseCSVLine(line, sep) {
       window.toggleCSVDrop = toggleCSVDrop;
       window.importCSVFromInput = importCSVFromInput;
       window.addDate = addDate;
+      window.editDate = editDate;
       window.toggleSidebar = toggleSidebar;
       window.toggleSection = toggleSection;
       window.saveCurrentVersion = saveCurrentVersion;
