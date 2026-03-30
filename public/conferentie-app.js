@@ -3,18 +3,21 @@
    Extracted from HTML version and adapted for Supabase cloud storage
    ═══════════════════════════════════════════════════════════════ */
 
+// Prevent double-loading (React strict mode / re-renders)
+if (window.__confPlannerLoaded) { console.warn('Conferentie script already loaded, skipping'); }
+
 // Global variables
-const TYPE_COLORS = {
+var TYPE_COLORS = {
   lezing: '#1565c0', workshop: '#2e7d32', paneldiscussie: '#6a1b9a',
   pauze: '#ff8f00', lunch: '#e65100', netwerken: '#00838f',
   registratie: '#455a64', overig: '#c62828'
 };
-const TYPE_LABELS = {
+var TYPE_LABELS = {
   lezing: 'Lezing', workshop: 'Workshop', paneldiscussie: 'Paneldiscussie',
   pauze: 'Pauze', lunch: 'Lunch', netwerken: 'Netwerken',
   registratie: 'Registratie', overig: 'Overig'
 };
-const BREAK_TYPES = ['pauze', 'lunch'];
+var BREAK_TYPES = ['pauze', 'lunch'];
 
 let state = {
   halls: [],
@@ -29,7 +32,7 @@ let state = {
 };
 
 let undoStack = [];
-const MAX_UNDO = 20;
+var MAX_UNDO = 20;
 let currentConferenceId = null;
 let saveDebounceTimer = null;
 
