@@ -335,9 +335,14 @@ function PlannerApp({ user }: { user: any }) {
               </div>
               <div className="form-group">
                 <label>Kleur</label>
-                <div style={{display:'flex',alignItems:'center',gap:'8px'}}>
+                <div style={{display:'flex',alignItems:'center',gap:'8px',flexWrap:'wrap'}}>
                   <input type="color" id="sessionColor" style={{width:'48px',height:'36px',padding:'2px',border:'1px solid var(--border)',borderRadius:'4px'}} />
                   <span className="color-preview" id="colorPreview"></span>
+                  <div style={{display:'flex',gap:'4px',marginLeft:'8px'}}>
+                    <button type="button" title="Gaat door ✅" onClick={() => { const el = document.getElementById('sessionColor') as HTMLInputElement; if(el){el.value='#4caf50';(window as any).updateColorPreview?.();} }} style={{width:'28px',height:'28px',borderRadius:'50%',border:'2px solid #388e3c',background:'#4caf50',cursor:'pointer',fontSize:'12px',lineHeight:'24px',textAlign:'center' as const}}>✅</button>
+                    <button type="button" title="Nog niet rond ⚠️" onClick={() => { const el = document.getElementById('sessionColor') as HTMLInputElement; if(el){el.value='#ff9800';(window as any).updateColorPreview?.();} }} style={{width:'28px',height:'28px',borderRadius:'50%',border:'2px solid #f57c00',background:'#ff9800',cursor:'pointer',fontSize:'12px',lineHeight:'24px',textAlign:'center' as const}}>⚠️</button>
+                    <button type="button" title="Niet rond ❌" onClick={() => { const el = document.getElementById('sessionColor') as HTMLInputElement; if(el){el.value='#f44336';(window as any).updateColorPreview?.();} }} style={{width:'28px',height:'28px',borderRadius:'50%',border:'2px solid #d32f2f',background:'#f44336',cursor:'pointer',fontSize:'12px',lineHeight:'24px',textAlign:'center' as const}}>❌</button>
+                  </div>
                 </div>
               </div>
             </div>

@@ -1713,6 +1713,7 @@ function parseCSVLine(line, sep) {
       window.closeModal = closeModal;
       window.onTypeChange = onTypeChange;
       window.saveSession = saveSession;
+      window.updateColorPreview = updateColorPreview;
       window.deleteSession = deleteSession;
       window.addHall = addHall;
       window.editHall = editHall;
