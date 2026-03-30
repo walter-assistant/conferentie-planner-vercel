@@ -1704,6 +1704,8 @@ function parseCSVLine(line, sep) {
       window.importCSVFromInput = importCSVFromInput;
       window.addDate = addDate;
       window.editDate = editDate;
+      // Expose currentConferenceId for share modal
+      Object.defineProperty(window, 'currentConferenceId', { get: function() { return currentConferenceId; }, configurable: true });
       window.toggleSidebar = toggleSidebar;
       window.toggleSection = toggleSection;
       window.saveCurrentVersion = saveCurrentVersion;
@@ -1724,17 +1726,40 @@ function parseCSVLine(line, sep) {
       
       // Wait for auth session to be restored before loading
       async function initApp() {
-        // Script only loads when React confirms user is authenticated
-        // But verify we have a valid session before querying
+        // Guest mode: load specific conference directly
+        if (window.__guestMode && window.__guestConferenceId) {
+          console.log('🎟️ Guest mode, loading conference:', window.__guestConferenceId);
+          currentConferenceId = window.__guestConferenceId;
+          try {
+            var { data: confData } = await window.supabase.from('conferences').select('*').eq('id', currentConferenceId).single();
+            if (confData && confData.data) {
+              state = {
+                confName: confData.name || 'Conferentie',
+                halls: confData.data.halls || [],
+                sessions: confData.data.sessions || [],
+                dates: confData.data.dates || [],
+                activeDate: confData.data.activeDate || (confData.data.dates && confData.data.dates[0]) || null,
+                startHour: confData.data.startHour || 8,
+                endHour: confData.data.endHour || 22,
+                nextId: confData.data.nextId || 1,
+                versions: confData.data.versions || []
+              };
+              console.log('✅ Guest: loaded', state.sessions.length, 'sessions,', state.halls.length, 'halls');
+            }
+          } catch(e) { console.error('Guest load error:', e); }
+          renderAll();
+          return;
+        }
+        
+        // Normal auth flow
         try {
-          const { data: { session } } = await window.supabase.auth.getSession();
+          var { data: { session } } = await window.supabase.auth.getSession();
           console.log('Auth check:', session ? 'Logged in as ' + session.user.email : 'NOT authenticated');
           
           if (!session) {
-            // Wait and retry — React loaded us but session may not be synced yet
             console.log('Waiting for auth sync...');
             await new Promise(r => setTimeout(r, 2000));
-            const { data: { session: s2 } } = await window.supabase.auth.getSession();
+            var { data: { session: s2 } } = await window.supabase.auth.getSession();
             if (s2) {
               console.log('Auth synced:', s2.user.email);
             } else {

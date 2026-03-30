@@ -164,6 +164,109 @@ export const conferenceService = {
   }
 }
 
+// Share helpers
+export interface ConferenceShare {
+  id: string
+  conference_id: string
+  code: string
+  permission: 'view' | 'edit'
+  label: string | null
+  active: boolean
+  created_by: string | null
+  created_at: string
+}
+
+export const shareService = {
+  // Generate a random share code
+  generateCode(): string {
+    const chars = 'abcdefghjkmnpqrstuvwxyz23456789'
+    let code = ''
+    for (let i = 0; i < 8; i++) code += chars[Math.floor(Math.random() * chars.length)]
+    return code
+  },
+
+  // Create a new share link
+  async createShare(conferenceId: string, permission: 'view' | 'edit', label?: string): Promise<ConferenceShare> {
+    const { data: user } = await supabase.auth.getUser()
+    const code = this.generateCode()
+    
+    const { data, error } = await supabase
+      .from('conference_shares')
+      .insert({
+        conference_id: conferenceId,
+        code,
+        permission,
+        label: label || null,
+        created_by: user.user?.id
+      })
+      .select()
+      .single()
+    
+    if (error) throw error
+    return data
+  },
+
+  // Get all shares for a conference
+  async getShares(conferenceId: string): Promise<ConferenceShare[]> {
+    const { data, error } = await supabase
+      .from('conference_shares')
+      .select('*')
+      .eq('conference_id', conferenceId)
+      .order('created_at', { ascending: false })
+    
+    if (error) throw error
+    return data || []
+  },
+
+  // Deactivate a share
+  async deactivateShare(shareId: string): Promise<void> {
+    const { error } = await supabase
+      .from('conference_shares')
+      .update({ active: false })
+      .eq('id', shareId)
+    
+    if (error) throw error
+  },
+
+  // Delete a share
+  async deleteShare(shareId: string): Promise<void> {
+    const { error } = await supabase
+      .from('conference_shares')
+      .delete()
+      .eq('id', shareId)
+    
+    if (error) throw error
+  },
+
+  // Look up a share by code (works without auth)
+  async getShareByCode(code: string): Promise<ConferenceShare | null> {
+    const { data, error } = await supabase
+      .from('conference_shares')
+      .select('*')
+      .eq('code', code)
+      .eq('active', true)
+      .single()
+    
+    if (error) return null
+    return data
+  },
+
+  // Get conference data via share code (works without auth)
+  async getConferenceByShareCode(code: string): Promise<{ conference: any, permission: string } | null> {
+    const share = await this.getShareByCode(code)
+    if (!share) return null
+    
+    const { data, error } = await supabase
+      .from('conferences')
+      .select('*')
+      .eq('id', share.conference_id)
+      .single()
+    
+    if (error) return null
+    return { conference: data, permission: share.permission }
+  }
+}
+
 // Auth helpers
 export const authService = {
   // Sign up
